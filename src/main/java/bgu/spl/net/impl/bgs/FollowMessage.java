@@ -13,6 +13,14 @@ public class FollowMessage extends bgsMessage {
         return 0;
     }
 
+    public byte getFollow() {
+        return follow;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
     @Override
     public void fromBytes(byte[] msg, int length) {
         follow = msg[0];
