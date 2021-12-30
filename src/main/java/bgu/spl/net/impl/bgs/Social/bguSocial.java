@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class bguSocial {
 
     private ConcurrentHashMap<String, User> username_to_user;
-    private String filtered_words[] = {"fuck", "yael amit", "sex", "asshole"};
+    private String filtered_words[] = {"fuck", "sex", "asshole"};
 
     public bguSocial() {
         username_to_user = new ConcurrentHashMap<>();
