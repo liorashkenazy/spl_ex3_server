@@ -7,17 +7,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class User {
 
-    String username;
-    String password;
-    String birthday;
-    int age;
-    int id;
-    boolean log_in;
-    ConcurrentLinkedQueue<User> followers;
-    ConcurrentLinkedQueue<User> following;
-    ConcurrentLinkedQueue<bgsMessage> unreceived_msg;
-    ConcurrentLinkedQueue<User> blocked_by;
-    int num_posts;
+    private final String username;
+    private final String password;
+    private final String birthday;
+    private final int age;
+    private int current_connection_id;
+    private boolean logged_in;
+    private ConcurrentLinkedQueue<User> followers;
+    private ConcurrentLinkedQueue<User> following;
+    private ConcurrentLinkedQueue<bgsMessage> unreceived_msg;
+    private ConcurrentLinkedQueue<User> blocked_by;
+    private int num_posts;
 
 
     public User(String username, String password, String birthday) {
@@ -26,8 +26,8 @@ public class User {
         this.birthday = birthday;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         age = Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
-        id = -1;
-        log_in = false;
+        current_connection_id = -1;
+        logged_in = false;
         followers = new ConcurrentLinkedQueue<>();
         following = new ConcurrentLinkedQueue<>();
         unreceived_msg = new ConcurrentLinkedQueue<>();
@@ -35,16 +35,16 @@ public class User {
         num_posts = 0;
     }
 
-    public int getId() {
-        return id;
+    public int getCurrentConnectionId() {
+        return current_connection_id;
     }
 
     public void setLogIn(boolean log_stat) {
-        log_in = log_stat;
+        logged_in = log_stat;
     }
 
     public boolean isLoggedIn() {
-        return log_in;
+        return logged_in;
     }
 
     public boolean addFollower(User user){
@@ -81,6 +81,12 @@ public class User {
 
     public ConcurrentLinkedQueue<bgsMessage> getUnreceivedMsg() {
         return unreceived_msg;
+    }
+
+    public void addBlockedBy(User blocking_user) {
+        followers.remove(blocking_user);
+        following.remove(blocking_user);
+        blocked_by.add(blocking_user);
     }
 
     public boolean isBlockedByUser(User user) {
