@@ -1,5 +1,4 @@
-package bgu.spl.net.srv;
-//package bgu.spl.net.api.bidi;
+package bgu.spl.net.api.bidi;
 
 import java.io.IOException;
 

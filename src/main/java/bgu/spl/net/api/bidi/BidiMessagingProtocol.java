@@ -1,4 +1,3 @@
-package bgu.spl.net.srv;
 package bgu.spl.net.api.bidi;
 
 public interface BidiMessagingProtocol<T>  {

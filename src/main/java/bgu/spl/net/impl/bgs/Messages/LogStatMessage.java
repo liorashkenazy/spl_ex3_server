@@ -1,10 +1,12 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.bgs.Messages;
 
-public class LogoutMessage extends bgsMessage {
+import bgu.spl.net.impl.bgs.Messages.bgsMessage;
+
+public class LogStatMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 3;
+        return 7;
     }
 
     @Override

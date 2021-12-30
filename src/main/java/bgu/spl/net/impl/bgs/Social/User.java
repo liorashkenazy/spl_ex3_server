@@ -1,0 +1,131 @@
+package bgu.spl.net.impl.bgs.Social;
+
+import bgu.spl.net.impl.bgs.Messages.bgsMessage;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class User {
+
+    private final String username;
+    private final String password;
+    private final String birthday;
+    private final short age;
+    private int current_connection_id;
+    private AtomicBoolean logged_in;
+    private ConcurrentLinkedQueue<User> followers;
+    private AtomicInteger following_count;
+    private ConcurrentLinkedQueue<bgsMessage> unreceived_msg;
+    private ConcurrentLinkedQueue<User> block_list;
+    private int num_posts;
+
+    public User(String username, String password, String birthday) {
+        this.username = username;
+        this.password = password;
+        this.birthday = birthday;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        age = (short)Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
+        current_connection_id = -1;
+        logged_in = new AtomicBoolean(false);
+        followers = new ConcurrentLinkedQueue<>();
+        following_count = new AtomicInteger(0);
+        unreceived_msg = new ConcurrentLinkedQueue<>();
+        block_list = new ConcurrentLinkedQueue<>();
+        num_posts = 0;
+    }
+
+    public int getCurrentConnectionId() {
+        return current_connection_id;
+    }
+
+    public boolean logIn(String password, int connection_id) {
+         if (!this.password.equals(password) || !(logged_in.compareAndSet(false, true))) {
+             return false;
+         }
+         current_connection_id = connection_id;
+         return true;
+    }
+
+    public boolean isLoggedIn() {
+        return logged_in.get();
+    }
+
+    private void addFollower(User user) {
+        followers.add(user);
+    }
+
+    public boolean follow(User user) {
+        if (user.followers.contains(this) || user.isBlocking(this)) {
+            return false;
+        }
+        user.addFollower(this);
+        following_count.incrementAndGet();
+        return true;
+    }
+
+    public boolean unfollow(User user) {
+        if (user.followers.contains(this)) {
+            user.removeFollower(this);
+            following_count.decrementAndGet();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeFollower(User user) {
+        return followers.remove(user);
+    }
+
+    public ConcurrentLinkedQueue<User> getFollowers() {
+        return followers;
+    }
+
+    public ConcurrentLinkedQueue<bgsMessage> getUnreceivedMsg() {
+        return unreceived_msg;
+    }
+
+    public void block(User to_block) {
+        block_list.add(to_block);
+        if (followers.contains(to_block)) {
+            followers.remove(to_block);
+            to_block.following_count.decrementAndGet();
+        }
+        to_block.removeFollower(to_block);
+    }
+
+    public boolean isBlocking(User other) {
+        return block_list.contains(other);
+    }
+
+    public void increaseNumPosts(){
+        num_posts++;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public short getAge() {
+        return age;
+    }
+
+    public short getNumPosts() {
+        return (short) num_posts;
+    }
+
+    public short getNumFollowers() {
+        return (short) followers.size();
+    }
+
+    public short getNumFollowing() {
+        return (short) following_count.get();
+    }
+
+    public boolean logout() {
+        return logged_in.compareAndSet(true, false);
+    }
+}

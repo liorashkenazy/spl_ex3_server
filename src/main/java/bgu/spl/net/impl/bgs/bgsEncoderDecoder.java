@@ -1,6 +1,7 @@
 package bgu.spl.net.impl.bgs;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
+import bgu.spl.net.impl.bgs.Messages.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;

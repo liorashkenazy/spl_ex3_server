@@ -1,16 +1,16 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.bgs.Messages;
+
+import bgu.spl.net.impl.bgs.Messages.bgsMessage;
 
 import java.nio.ByteBuffer;
 
-public class AckMessage extends bgsMessage {
+public class ErrorMessage extends bgsMessage {
 
-    private final short opcode = 10;
+    private final short opcode = 11;
     private short messageOpcode;
-    private byte[] optional_msg;
 
-    public AckMessage(short message_op, byte[] msg) {
+    public ErrorMessage(short message_op) {
         this.messageOpcode = message_op;
-        this.optional_msg = msg;
     }
 
     @Override
@@ -25,14 +25,10 @@ public class AckMessage extends bgsMessage {
 
     @Override
     public byte[] toBytes() {
-        int size = 4 + (optional_msg == null ? 0 : optional_msg.length);
-        byte[] ret = new byte[size];
+        byte[] ret = new byte[4];
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);
         ret_buf.putShort(messageOpcode);
-        if (optional_msg != null) {
-            ret_buf.put(optional_msg);
-        }
         return ret;
     }
 }

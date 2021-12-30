@@ -1,4 +1,6 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.bgs.Messages;
+
+import bgu.spl.net.impl.bgs.Messages.bgsMessage;
 
 import java.nio.charset.StandardCharsets;
 
@@ -12,7 +14,7 @@ public class BlockMessage extends bgsMessage {
         return 0;
     }
 
-    public String getUsername() { return username; };
+    public String getUsername() { return username; }
 
     @Override
     public void fromBytes(byte[] msg, int length) {
