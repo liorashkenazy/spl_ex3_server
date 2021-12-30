@@ -8,7 +8,10 @@ import bgu.spl.net.impl.bgs.Social.bguSocial;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
 
@@ -117,11 +120,39 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     }
 
     private bgsMessage handlePost(PostMessage msg) {
-        return null;
+        if (curr_user == null) {
+            return new ErrorMessage(msg.getOp());
+        }
+        String content = msg.getContent();
+        NotificationMessage notification = new NotificationMessage((byte)1, curr_user.getUsername(), content);
+        HashSet<User> users = new HashSet<>();
+        users.addAll(curr_user.getFollowers());
+        users.addAll(getTaggedUsers(content));
+        for (User user : users) {
+            if (user.isLoggedIn()) {
+                connections.send(user.getCurrentConnectionId(), notification);
+            }
+            else {
+                user.addUnreceivedMsg(notification);
+            }
+        }
+        return new AckMessage(msg.getOp(),null);
     }
 
     private bgsMessage handlePM(PMMessage msg) {
-        return null;
+        User user = social.getUserByName(msg.getUsername());
+        if (curr_user == null || user == null || user.isBlocking(curr_user)) {
+            return new ErrorMessage(msg.getOp());
+        }
+        String filtered_content = social.filterMessage(msg.getContent());
+        NotificationMessage notification = new NotificationMessage((byte)0, curr_user.getUsername(), filtered_content);
+        if (user.isLoggedIn()) {
+            connections.send(user.getCurrentConnectionId(), notification);
+        }
+        else {
+            user.addUnreceivedMsg(notification);
+        }
+        return new AckMessage(msg.getOp(), null);
     }
 
     private LinkedList<bgsMessage> handleLogStat(LogStatMessage msg) {
@@ -178,5 +209,20 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             return new AckMessage(opcode, info);
         }
         return new ErrorMessage(opcode);
+    }
+
+    private LinkedList<User> getTaggedUsers(String content) {
+        LinkedList<User> tagged_users = new LinkedList<>();
+        Pattern pattern = Pattern.compile("(@[^|; ]+)", Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(content);
+
+        while (matcher.find()) {
+            String username = matcher.group();
+            User user = social.getUserByName(username);
+            if (user != null) {
+                tagged_users.add(user);
+            }
+        }
+        return tagged_users;
     }
 }

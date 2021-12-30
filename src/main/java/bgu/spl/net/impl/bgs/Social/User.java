@@ -1,5 +1,6 @@
 package bgu.spl.net.impl.bgs.Social;
 
+import bgu.spl.net.impl.bgs.Messages.NotificationMessage;
 import bgu.spl.net.impl.bgs.Messages.bgsMessage;
 
 import java.time.LocalDate;
@@ -82,6 +83,10 @@ public class User {
 
     public ConcurrentLinkedQueue<User> getFollowers() {
         return followers;
+    }
+
+    public void addUnreceivedMsg(NotificationMessage msg) {
+        unreceived_msg.add(msg);
     }
 
     public ConcurrentLinkedQueue<bgsMessage> getUnreceivedMsg() {

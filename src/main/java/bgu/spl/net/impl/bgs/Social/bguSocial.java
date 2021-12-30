@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class bguSocial {
 
     private ConcurrentHashMap<String, User> username_to_user;
+    private String filtered_words[] = {"fuck", "yael amit", "sex", "asshole"};
 
     public bguSocial() {
         username_to_user = new ConcurrentHashMap<>();
@@ -28,5 +29,13 @@ public class bguSocial {
 
     public Collection<User> getRegisteredUsers() {
         return username_to_user.values();
+    }
+
+    public String filterMessage(String message) {
+        String filtered_message = message;
+        for (String to_filter : filtered_words) {
+            filtered_message = filtered_message.replaceAll(to_filter, "<filtered>");
+        }
+        return filtered_message;
     }
 }

@@ -23,4 +23,8 @@ public class PostMessage extends bgsMessage {
     public byte[] toBytes() {
         return new byte[0];
     }
+
+    public String getContent() {
+        return content;
+    }
 }
