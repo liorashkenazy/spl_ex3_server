@@ -1,6 +1,4 @@
-package bgu.spl.net.impl.bgs.Messages;
-
-import bgu.spl.net.impl.bgs.Messages.bgsMessage;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 

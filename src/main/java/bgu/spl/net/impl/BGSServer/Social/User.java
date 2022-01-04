@@ -1,7 +1,7 @@
-package bgu.spl.net.impl.bgs.Social;
+package bgu.spl.net.impl.BGSServer.Social;
 
-import bgu.spl.net.impl.bgs.Messages.NotificationMessage;
-import bgu.spl.net.impl.bgs.Messages.bgsMessage;
+import bgu.spl.net.impl.BGSServer.Messages.NotificationMessage;
+import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 
 import java.time.LocalDate;
 import java.time.Period;

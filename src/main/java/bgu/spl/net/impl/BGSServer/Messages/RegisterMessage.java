@@ -1,15 +1,13 @@
-package bgu.spl.net.impl.bgs.Messages;
-
-import bgu.spl.net.impl.bgs.Messages.bgsMessage;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 
-public class LoginMessage extends bgsMessage {
+public class RegisterMessage extends bgsMessage {
 
-    private final short op = 2;
+    private final short op = 1;
     private String username;
     private String password;
-    private byte captcha;
+    private String birthday;
 
     @Override
     public short getOp() {
@@ -18,13 +16,15 @@ public class LoginMessage extends bgsMessage {
 
     public String getUsername() { return username; }
     public String getPassword() { return password; }
+    public String getBirthday() { return birthday; }
 
     @Override
     public void fromBytes(byte[] msg, int length) {
         int index = getNextNullTerminator(msg,0);
         username = new String(msg, 0, index, StandardCharsets.UTF_8);
         password = new String(msg, index + 1, getNextNullTerminator(msg,index + 1) - index, StandardCharsets.UTF_8);
-        captcha = msg[getNextNullTerminator(msg,index + 1) + 1];
+        index = getNextNullTerminator(msg,index + 1) + 1;
+        birthday = new String(msg, index, getNextNullTerminator(msg, index) - index, StandardCharsets.UTF_8);
     }
 
     @Override

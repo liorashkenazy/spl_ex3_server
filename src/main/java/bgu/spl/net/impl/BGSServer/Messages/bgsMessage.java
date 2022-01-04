@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs.Messages;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 public abstract class bgsMessage {
 

@@ -1,10 +1,10 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer;
 
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.impl.bgs.Messages.*;
-import bgu.spl.net.impl.bgs.Social.User;
-import bgu.spl.net.impl.bgs.Social.bguSocial;
+import bgu.spl.net.impl.BGSServer.Messages.*;
+import bgu.spl.net.impl.BGSServer.Social.User;
+import bgu.spl.net.impl.BGSServer.Social.bguSocial;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

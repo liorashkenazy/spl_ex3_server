@@ -1,9 +1,7 @@
-package bgu.spl.net.impl.bgs.Social;
+package bgu.spl.net.impl.BGSServer.Social;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class bguSocial {
 
