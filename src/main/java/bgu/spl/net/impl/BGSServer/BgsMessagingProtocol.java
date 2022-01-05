@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,29 +39,32 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     public void process(bgsMessage message) {
         switch (message.getOp()) {
             case 1:
-                connections.send(id, handleRegister((RegisterMessage)message));
+                handleRegister((RegisterMessage)message);
+                break;
             case 2:
-                connections.send(id, handleLogin((LoginMessage)message));
+                handleLogin((LoginMessage)message);
+                break;
             case 3:
-                connections.send(id, handleLogout((LogoutMessage)message));
+                handleLogout((LogoutMessage)message);
+                break;
             case 4:
-                connections.send(id, handleFollow((FollowMessage)message));
+                handleFollow((FollowMessage)message);
+                break;
             case 5:
-                connections.send(id, handlePost((PostMessage)message));
+                handlePost((PostMessage)message);
+                break;
             case 6:
-                connections.send(id, handlePM((PMMessage)message));
+                handlePM((PMMessage)message);
+                break;
             case 7:
-                LinkedList<bgsMessage> returned_log_stat_messages = handleLogStat((LogStatMessage)message);
-                for (bgsMessage msg : returned_log_stat_messages) {
-                    connections.send(id, msg);
-                }
+                handleLogStat((LogStatMessage)message);
+                break;
             case 8:
-                LinkedList<bgsMessage> returned_stat_messages = handleStat((StatMessage)message);
-                for (bgsMessage msg : returned_stat_messages) {
-                    connections.send(id, msg);
-                }
+                handleStat((StatMessage)message);
+                break;
             case 12:
-                connections.send(id, handleBlock((BlockMessage)message));
+                handleBlock((BlockMessage)message);
+                break;
         }
     }
 
@@ -69,59 +73,67 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         return shouldTerminate;
     }
 
-    private bgsMessage handleRegister(RegisterMessage msg) {
+    private void handleRegister(RegisterMessage msg) {
         if (social.registerUser(msg.getUsername(), msg.getPassword(), msg.getBirthday())) {
-            return new AckMessage(msg.getOp(), null);
+            connections.send(id, new AckMessage(msg.getOp(), null));
         }
         else {
-            return new ErrorMessage(msg.getOp());
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
     }
 
-    private bgsMessage handleLogin(LoginMessage msg) {
+    private void handleLogin(LoginMessage msg) {
         User user = social.getUserByName(msg.getUsername());
-        if (user == null || !user.logIn(msg.getPassword(), id)) {
-            return new ErrorMessage(msg.getOp());
+        if (curr_user != null || user == null || !user.logIn(msg.getPassword(), id)) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
         curr_user = user;
-        return new AckMessage(msg.getOp(), null);
+        ConcurrentLinkedQueue<bgsMessage> unreceived_msg =  curr_user.getUnreceivedMsg();
+        for (bgsMessage message : unreceived_msg) {
+            connections.send(id, message);
+        }
+        curr_user.emptyUnreceivedMsgQueue();
+        connections.send(id, new AckMessage(msg.getOp(), null));
     }
 
-    private bgsMessage handleLogout(LogoutMessage msg) {
+    private void handleLogout(LogoutMessage msg) {
         if (curr_user == null || !curr_user.logout()) {
-            return new ErrorMessage(msg.getOp());
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
         curr_user = null;
-        return new AckMessage(msg.getOp(), null);
+        connections.send(id, new AckMessage(msg.getOp(), null));
     }
 
-    private bgsMessage handleFollow(FollowMessage msg) {
-        if (!curr_user.isLoggedIn()) {
-            return new ErrorMessage(msg.getOp());
+    private void handleFollow(FollowMessage msg) {
+        if (curr_user == null || !curr_user.isLoggedIn()) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
         User other_user = social.getUserByName(msg.getUsername());
+        if (other_user == null) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
+        }
         // Follow case
         if (msg.getFollow() == 0) {
             // if current user already following the other user or if other user blocked him
             // than Error message will be sent back
             if (!curr_user.follow(other_user)) {
-                return new ErrorMessage(msg.getOp());
+                connections.send(id, new ErrorMessage(msg.getOp()));
             }
         }
         // Unfollow case
         else {
             // if current user is not following the other user
             if (!curr_user.unfollow(other_user)) {
-                return new ErrorMessage(msg.getOp());
+                connections.send(id, new ErrorMessage(msg.getOp()));
             }
         }
         // The follow command succeeded
-        return new AckMessage(msg.getOp(), msg.getUsername().getBytes(StandardCharsets.UTF_8));
+        connections.send(id, new AckMessage(msg.getOp(), msg.getUsername().getBytes(StandardCharsets.UTF_8)));
     }
 
-    private bgsMessage handlePost(PostMessage msg) {
+    private void handlePost(PostMessage msg) {
         if (curr_user == null) {
-            return new ErrorMessage(msg.getOp());
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
         String content = msg.getContent();
         NotificationMessage notification = new NotificationMessage((byte)1, curr_user.getUsername(), content);
@@ -129,86 +141,96 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         users.addAll(curr_user.getFollowers());
         users.addAll(getTaggedUsers(content));
         for (User user : users) {
-            if (user.isLoggedIn()) {
-                connections.send(user.getCurrentConnectionId(), notification);
-            }
-            else {
-                user.addUnreceivedMsg(notification);
-            }
+            sendMessageToUser(user, notification);
         }
-        return new AckMessage(msg.getOp(),null);
+        curr_user.increaseNumPosts();
+        connections.send(id,new AckMessage(msg.getOp(),null));
     }
 
-    private bgsMessage handlePM(PMMessage msg) {
+    private void handlePM(PMMessage msg) {
         User user = social.getUserByName(msg.getUsername());
         if (curr_user == null || user == null || user.isBlocking(curr_user)) {
-            return new ErrorMessage(msg.getOp());
+            connections.send(id, new ErrorMessage(msg.getOp()));
         }
         String filtered_content = social.filterMessage(msg.getContent());
         NotificationMessage notification = new NotificationMessage((byte)0, curr_user.getUsername(), filtered_content);
+        sendMessageToUser(user, notification);
+        connections.send(id, new AckMessage(msg.getOp(), null));
+    }
+
+    //TODO: Change the decoder for LogStat msg in client
+    private void handleLogStat(LogStatMessage msg) {
+        if (curr_user == null) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
+        }
+        // TODO: change the byte array size
+        else {
+            byte[] info = new byte[1024];
+            ByteBuffer info_buf = ByteBuffer.wrap(info);
+            for (User user : social.getRegisteredUsers()) {
+                if (user.isLoggedIn()) {
+                    if(!getUserStat(info_buf, user)) {
+                        connections.send(id, new ErrorMessage(msg.getOp()));
+                        return;
+                    }
+                }
+            }
+           connections.send(id, new AckMessage(msg.getOp(), info));
+        }
+    }
+
+    //TODO: Change the decoder for LogStat msg in client
+    private void handleStat(StatMessage msg) {
+        if (curr_user == null) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
+        }
+        else {
+            // TODO: change the byte array size
+            byte[] info = new byte[1024];
+            ByteBuffer info_buf = ByteBuffer.wrap(info);
+            for (String username : msg.getListOfUsernames().split("|")) {
+                User user = social.getUserByName(username);
+                if (user == null || !getUserStat(info_buf, user)) {
+                    connections.send(id, new ErrorMessage(msg.getOp()));
+                    return;
+                }
+            }
+            connections.send(id, new AckMessage(msg.getOp(), info));
+        }
+    }
+
+    private void handleBlock(BlockMessage msg) {
+        if (curr_user == null) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
+        }
+        User user_to_block = social.getUserByName(msg.getUsername());
+        // if user to block doesn't exist an Error message will be sent back
+        if (user_to_block == null) {
+            connections.send(id, new ErrorMessage(msg.getOp()));
+        }
+        curr_user.block(user_to_block);
+        connections.send(id, new AckMessage(msg.getOp(), null));
+    }
+
+    private boolean getUserStat(ByteBuffer info_buf, User user) {
+        if (!user.isBlocking(curr_user)) {
+            info_buf.putShort(user.getAge());
+            info_buf.putShort(user.getNumPosts());
+            info_buf.putShort(user.getNumFollowers());
+            //TODO: remove the last /0 from bytes array
+            info_buf.put((byte) 0);
+            return true;
+        }
+        return false;
+    }
+
+    private void sendMessageToUser(User user, NotificationMessage notification) {
         if (user.isLoggedIn()) {
             connections.send(user.getCurrentConnectionId(), notification);
         }
         else {
             user.addUnreceivedMsg(notification);
         }
-        return new AckMessage(msg.getOp(), null);
-    }
-
-    private LinkedList<bgsMessage> handleLogStat(LogStatMessage msg) {
-        LinkedList<bgsMessage> return_messages = new LinkedList<>();
-        if (curr_user == null) {
-            return_messages.add(new ErrorMessage(msg.getOp()));
-        }
-        else {
-            for (User user : social.getRegisteredUsers()) {
-                if (user.isLoggedIn()) {
-                    return_messages.add(getUserStat(msg.getOp(), user));
-                }
-            }
-        }
-        return return_messages;
-    }
-
-    private LinkedList<bgsMessage> handleStat(StatMessage msg) {
-        LinkedList<bgsMessage> return_messages = new LinkedList<>();
-        if (curr_user == null) {
-            return_messages.add(new ErrorMessage(msg.getOp()));
-        }
-        else {
-            for (String username : msg.getListOfUsernames().split("|")) {
-                if (!social.isUserNameExist(username)) {
-                    return_messages.add(new ErrorMessage(msg.getOp()));
-                    return return_messages;
-                }
-                return_messages.add(getUserStat(msg.getOp(),social.getUserByName(username)));
-            }
-        }
-        return return_messages;
-    }
-
-    private bgsMessage handleBlock(BlockMessage msg) {
-        User user_to_block = social.getUserByName(msg.getUsername());
-        // if user to block doesn't exist an Error message will be sent back
-        if (user_to_block == null) {
-            return new ErrorMessage(msg.getOp());
-        }
-        curr_user.block(user_to_block);
-        return new AckMessage(msg.getOp(), null);
-    }
-
-    private bgsMessage getUserStat(short opcode, User user) {
-        if (!user.isBlocking(curr_user)) {
-            byte[] info = new byte[8];
-            ByteBuffer info_buf = ByteBuffer.wrap(info);
-            info_buf.putShort(user.getAge());
-            info_buf.putShort(user.getNumPosts());
-            info_buf.putShort(user.getNumPosts());
-            info_buf.putShort(user.getNumFollowers());
-            info_buf.putShort(user.getNumFollowing());
-            return new AckMessage(opcode, info);
-        }
-        return new ErrorMessage(opcode);
     }
 
     private LinkedList<User> getTaggedUsers(String content) {
