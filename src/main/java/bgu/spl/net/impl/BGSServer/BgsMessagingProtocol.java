@@ -27,14 +27,12 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     }
 
     @Override
-    //TODO VERY VERY IMPORTANT, check if we can change the signature
     public void start(int connectionId, Connections<bgsMessage> connections) {
         this.id = connectionId;
         this.connections = connections;
         curr_user = null;
     }
 
-    // TODO: change return value in NBCH class (line 50)
     @Override
     public void process(bgsMessage message) {
         switch (message.getOp()) {
@@ -104,6 +102,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         }
         curr_user = null;
         connections.send(id, new AckMessage(msg.getOp(), null));
+        connections.disconnect(id);
     }
 
     private void handleFollow(FollowMessage msg) {
@@ -117,7 +116,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             return;
         }
         // Follow case
-        if (msg.getFollow() == 0) {
+        if (msg.getFollowAction() == 0) {
             // if current user already following the other user or if other user blocked him
             // than Error message will be sent back
             if (!curr_user.follow(other_user)) {
@@ -152,60 +151,68 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         }
         curr_user.increaseNumPosts();
         connections.send(id,new AckMessage(msg.getOp(),null));
+        social.addPostPM(msg);
     }
 
     private void handlePM(PMMessage msg) {
         User user = social.getUserByName(msg.getUsername());
-        if (curr_user == null || user == null || user.isBlocking(curr_user)) {
+        if (curr_user == null || user == null || user.isBlocking(curr_user) || curr_user.isBlocking(user)) {
             connections.send(id, new ErrorMessage(msg.getOp()));
             return;
         }
         String filtered_content = social.filterMessage(msg.getContent());
+        filtered_content += msg.getDateAndTime();
         NotificationMessage notification = new NotificationMessage((byte)0, curr_user.getUsername(), filtered_content);
         sendMessageToUser(user, notification);
         connections.send(id, new AckMessage(msg.getOp(), null));
+        social.addPostPM(msg);
     }
 
-    //TODO: Change the decoder for LogStat msg in client
     private void handleLogStat(LogStatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
             return;
         }
-        // TODO: change the byte array size
         else {
-            byte[] info = new byte[1024];
+            int count = 0;
+            byte[] info = new byte[social.getRegisteredUsers().size()*8];
             ByteBuffer info_buf = ByteBuffer.wrap(info);
             for (User user : social.getRegisteredUsers()) {
-                if (user.isLoggedIn()) {
-                    if (!getUserStat(info_buf, user)) {
-                        connections.send(id, new ErrorMessage(msg.getOp()));
-                        return;
-                    }
+                if (user.isLoggedIn() && !user.isBlocking(curr_user) && !curr_user.isBlocking(user)) {
+                    appendUserStat(info_buf, user);
+                    count++;
                 }
             }
-           connections.send(id, new AckMessage(msg.getOp(), info));
+            byte[] ack_optional = new byte[count*8];
+            copyByteArray(info, ack_optional);
+            connections.send(id, new AckMessage(msg.getOp(), ack_optional));
         }
     }
 
-    //TODO: Change the decoder for LogStat msg in client
     private void handleStat(StatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
             return;
         }
         else {
-            // TODO: change the byte array size
-            byte[] info = new byte[1024];
+            int count = 0;
+            String[] usernames_list = msg.getListOfUsernames().split("|");
+            byte[] info = new byte[usernames_list.length*8];
             ByteBuffer info_buf = ByteBuffer.wrap(info);
-            for (String username : msg.getListOfUsernames().split("|")) {
+            for (String username : usernames_list) {
                 User user = social.getUserByName(username);
-                if (user == null || !getUserStat(info_buf, user)) {
+                if (user == null || user.isBlocking(curr_user) && curr_user.isBlocking(user)) {
                     connections.send(id, new ErrorMessage(msg.getOp()));
                     return;
                 }
+                else {
+                    appendUserStat(info_buf, user);
+                    count++;
+                }
             }
-            connections.send(id, new AckMessage(msg.getOp(), info));
+            byte[] ack_optional = new byte[count*8];
+            copyByteArray(info, ack_optional);
+            connections.send(id, new AckMessage(msg.getOp(), ack_optional));
         }
     }
 
@@ -224,16 +231,16 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         connections.send(id, new AckMessage(msg.getOp(), null));
     }
 
-    private boolean getUserStat(ByteBuffer info_buf, User user) {
-        if (!user.isBlocking(curr_user)) {
-            info_buf.putShort(user.getAge());
-            info_buf.putShort(user.getNumPosts());
-            info_buf.putShort(user.getNumFollowers());
-            //TODO: remove the last /0 from bytes array
-            info_buf.put((byte) 0);
-            return true;
+    private void appendUserStat(ByteBuffer info_buf, User user) {
+        info_buf.putShort(user.getAge());
+        info_buf.putShort(user.getNumPosts());
+        info_buf.putShort(user.getNumFollowers());
+    }
+
+    private void copyByteArray(byte[] old_arr, byte[] new_arr) {
+        for (int i=0; i<new_arr.length; i++) {
+            new_arr[i] = old_arr[i];
         }
-        return false;
     }
 
     private void sendMessageToUser(User user, NotificationMessage notification) {
@@ -252,7 +259,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         while (matcher.find()) {
             String username = matcher.group();
             User user = social.getUserByName(username);
-            if (user != null) {
+            if (user != null && !user.isBlocking(curr_user) && !curr_user.isBlocking(user)) {
                 tagged_users.add(user);
             }
         }

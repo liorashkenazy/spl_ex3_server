@@ -15,7 +15,6 @@ public class User {
     private final String username;
     private final String password;
     private final String birthday;
-    private final short age;
     private int current_connection_id;
     private AtomicBoolean logged_in;
     private ConcurrentLinkedQueue<User> followers;
@@ -28,8 +27,6 @@ public class User {
         this.username = username;
         this.password = password;
         this.birthday = birthday;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        age = (short)Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
         current_connection_id = -1;
         logged_in = new AtomicBoolean(false);
         followers = new ConcurrentLinkedQueue<>();
@@ -51,6 +48,10 @@ public class User {
          return true;
     }
 
+    public boolean logout() {
+        return logged_in.compareAndSet(true, false);
+    }
+
     public boolean isLoggedIn() {
         return logged_in.get();
     }
@@ -60,7 +61,7 @@ public class User {
     }
 
     public boolean follow(User user) {
-        if (user.followers.contains(this) || user.isBlocking(this)) {
+        if (user.followers.contains(this) || user.isBlocking(this) || isBlocking(user)) {
             return false;
         }
         user.addFollower(this);
@@ -117,6 +118,8 @@ public class User {
     }
 
     public short getAge() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        short age = (short)Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
         return age;
     }
 
@@ -128,11 +131,4 @@ public class User {
         return (short) followers.size();
     }
 
-    public short getNumFollowing() {
-        return (short) following_count.get();
-    }
-
-    public boolean logout() {
-        return logged_in.compareAndSet(true, false);
-    }
 }

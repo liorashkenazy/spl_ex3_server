@@ -27,6 +27,7 @@ public class ErrorMessage extends bgsMessage {
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);
         ret_buf.putShort(messageOpcode);
+        ret_buf.put((byte)';');
         return ret;
     }
 }

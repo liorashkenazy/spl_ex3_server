@@ -3,6 +3,9 @@ package bgu.spl.net.srv;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
+import bgu.spl.net.api.bidi.Connections;
+import bgu.spl.net.impl.BGSServer.Connectionsimpl;
+import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,6 +32,8 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
+        Connectionsimpl conn = Connectionsimpl.getInstance();
+        this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
         this.reactor = reactor;
     }
 

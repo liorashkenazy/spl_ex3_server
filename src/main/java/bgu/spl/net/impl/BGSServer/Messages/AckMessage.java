@@ -33,6 +33,7 @@ public class AckMessage extends bgsMessage {
         if (optional_msg != null) {
             ret_buf.put(optional_msg);
         }
+        ret_buf.put((byte)';');
         return ret;
     }
 }

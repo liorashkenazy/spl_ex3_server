@@ -13,7 +13,7 @@ public class FollowMessage extends bgsMessage {
         return 0;
     }
 
-    public byte getFollow() {
+    public byte getFollowAction() {
         return follow;
     }
 

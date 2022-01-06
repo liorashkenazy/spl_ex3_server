@@ -1,19 +1,21 @@
 package bgu.spl.net.impl.BGSServer.Social;
 
+import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
+
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class bguSocial {
 
     private ConcurrentHashMap<String, User> username_to_user;
     private String filtered_words[] = {"fuck", "sex", "asshole"};
+    private ConcurrentLinkedQueue<bgsMessage> post_pm_list;
+
 
     public bguSocial() {
         username_to_user = new ConcurrentHashMap<>();
-    }
-
-    public boolean isUserNameExist(String user_name) {
-        return username_to_user.containsKey(user_name);
+        post_pm_list = new ConcurrentLinkedQueue<>();
     }
 
     public User getUserByName(String username) {
@@ -32,8 +34,12 @@ public class bguSocial {
     public String filterMessage(String message) {
         String filtered_message = message;
         for (String to_filter : filtered_words) {
-            filtered_message = filtered_message.replaceAll(to_filter, "<filtered>");
+            filtered_message = filtered_message.replaceAll(String.format("(%s)([. ,?!:]+)", to_filter), "<filtered>$2");
         }
         return filtered_message;
+    }
+
+    public void addPostPM (bgsMessage msg) {
+        post_pm_list.add(msg);
     }
 }

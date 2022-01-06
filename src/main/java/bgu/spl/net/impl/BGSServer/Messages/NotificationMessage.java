@@ -35,6 +35,7 @@ public class NotificationMessage extends bgsMessage {
         ret_buf.put((byte) 0);
         ret_buf.put(content.getBytes(StandardCharsets.UTF_8));
         ret_buf.put((byte) 0);
+        ret_buf.put((byte)';');
         return ret;
     }
 }
