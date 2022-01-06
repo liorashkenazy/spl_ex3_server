@@ -94,6 +94,7 @@ public class User {
     public void emptyUnreceivedMsgQueue() {
         unreceived_msg.clear();
     }
+
     public void block(User to_block) {
         block_list.add(to_block);
         if (followers.contains(to_block)) {

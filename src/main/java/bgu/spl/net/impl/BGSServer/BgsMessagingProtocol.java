@@ -86,19 +86,21 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         User user = social.getUserByName(msg.getUsername());
         if (curr_user != null || user == null || !user.logIn(msg.getPassword(), id)) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         curr_user = user;
+        connections.send(id, new AckMessage(msg.getOp(), null));
         ConcurrentLinkedQueue<bgsMessage> unreceived_msg =  curr_user.getUnreceivedMsg();
         for (bgsMessage message : unreceived_msg) {
             connections.send(id, message);
         }
         curr_user.emptyUnreceivedMsgQueue();
-        connections.send(id, new AckMessage(msg.getOp(), null));
     }
 
     private void handleLogout(LogoutMessage msg) {
         if (curr_user == null || !curr_user.logout()) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         curr_user = null;
         connections.send(id, new AckMessage(msg.getOp(), null));
@@ -107,10 +109,12 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleFollow(FollowMessage msg) {
         if (curr_user == null || !curr_user.isLoggedIn()) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         User other_user = social.getUserByName(msg.getUsername());
         if (other_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         // Follow case
         if (msg.getFollow() == 0) {
@@ -118,6 +122,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             // than Error message will be sent back
             if (!curr_user.follow(other_user)) {
                 connections.send(id, new ErrorMessage(msg.getOp()));
+                return;
             }
         }
         // Unfollow case
@@ -125,6 +130,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             // if current user is not following the other user
             if (!curr_user.unfollow(other_user)) {
                 connections.send(id, new ErrorMessage(msg.getOp()));
+                return;
             }
         }
         // The follow command succeeded
@@ -134,6 +140,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handlePost(PostMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         String content = msg.getContent();
         NotificationMessage notification = new NotificationMessage((byte)1, curr_user.getUsername(), content);
@@ -151,6 +158,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         User user = social.getUserByName(msg.getUsername());
         if (curr_user == null || user == null || user.isBlocking(curr_user)) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         String filtered_content = social.filterMessage(msg.getContent());
         NotificationMessage notification = new NotificationMessage((byte)0, curr_user.getUsername(), filtered_content);
@@ -162,6 +170,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleLogStat(LogStatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         // TODO: change the byte array size
         else {
@@ -169,7 +178,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             ByteBuffer info_buf = ByteBuffer.wrap(info);
             for (User user : social.getRegisteredUsers()) {
                 if (user.isLoggedIn()) {
-                    if(!getUserStat(info_buf, user)) {
+                    if (!getUserStat(info_buf, user)) {
                         connections.send(id, new ErrorMessage(msg.getOp()));
                         return;
                     }
@@ -183,6 +192,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleStat(StatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         else {
             // TODO: change the byte array size
@@ -202,11 +212,13 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleBlock(BlockMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         User user_to_block = social.getUserByName(msg.getUsername());
         // if user to block doesn't exist an Error message will be sent back
         if (user_to_block == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
+            return;
         }
         curr_user.block(user_to_block);
         connections.send(id, new AckMessage(msg.getOp(), null));
@@ -237,7 +249,6 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         LinkedList<User> tagged_users = new LinkedList<>();
         Pattern pattern = Pattern.compile("(@[^|; ]+)", Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(content);
-
         while (matcher.find()) {
             String username = matcher.group();
             User user = social.getUserByName(username);

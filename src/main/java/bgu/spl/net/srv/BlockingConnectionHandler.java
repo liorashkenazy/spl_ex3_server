@@ -50,11 +50,13 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     }
 
     @Override
-    public synchronized void send(T msg) {
+    public void send(T msg) {
         try { //just for automatic closing
             if (msg != null) {
-                out.write(encdec.encode(msg));
-                out.flush();
+                synchronized (this) {
+                    out.write(encdec.encode(msg));
+                    out.flush();
+                }
             }
         } catch (IOException ex) {
             ex.printStackTrace();
