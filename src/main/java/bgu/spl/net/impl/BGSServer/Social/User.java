@@ -124,11 +124,15 @@ public class User {
     }
 
     public short getNumPosts() {
-        return (short) num_posts;
+        return (short)num_posts;
     }
 
     public short getNumFollowers() {
-        return (short) followers.size();
+        return (short)followers.size();
+    }
+
+    public short getNumFollowing() {
+        return (short)following_count.get();
     }
 
 }

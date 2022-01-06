@@ -25,7 +25,7 @@ public class AckMessage extends bgsMessage {
 
     @Override
     public byte[] toBytes() {
-        int size = 4 + (optional_msg == null ? 0 : optional_msg.length);
+        int size = 5 + (optional_msg == null ? 0 : optional_msg.length);
         byte[] ret = new byte[size];
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);

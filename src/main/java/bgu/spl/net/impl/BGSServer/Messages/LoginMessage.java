@@ -16,6 +16,7 @@ public class LoginMessage extends bgsMessage {
 
     public String getUsername() { return username; }
     public String getPassword() { return password; }
+    public byte getCaptcha() { return captcha; }
 
     @Override
     public void fromBytes(byte[] msg, int length) {

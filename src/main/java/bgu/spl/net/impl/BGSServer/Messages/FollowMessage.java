@@ -10,7 +10,7 @@ public class FollowMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 0;
+        return op;
     }
 
     public byte getFollowAction() {
@@ -24,7 +24,7 @@ public class FollowMessage extends bgsMessage {
     @Override
     public void fromBytes(byte[] msg, int length) {
         follow = msg[0];
-        username = new String(msg, 1, length - 1, StandardCharsets.UTF_8);
+        username = new String(msg, 1,  getNextNullTerminator(msg, 1)- 1, StandardCharsets.UTF_8);
     }
 
     @Override

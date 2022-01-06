@@ -9,16 +9,6 @@ import java.util.Arrays;
 
 public class bgsEncoderDecoder implements MessageEncoderDecoder<bgsMessage> {
 
-    private static final Class<? extends bgsMessage> types_arr[] = new Class[] {RegisterMessage.class,
-                                                                                LoginMessage.class,
-                                                                                LogoutMessage.class,
-                                                                                FollowMessage.class,
-                                                                                PostMessage.class,
-                                                                                PMMessage.class,
-                                                                                LogStatMessage.class,
-                                                                                StatMessage.class,
-                                                                                BlockMessage.class};
-
     private byte[] bytes = new byte[1 << 10]; //start with 1k
     private byte[] opcode = new byte[2];
     private int opcode_len = 0;
@@ -40,7 +30,6 @@ public class bgsEncoderDecoder implements MessageEncoderDecoder<bgsMessage> {
     public bgsMessage decodeNextByte(byte nextByte) {
         if (nextByte != ';') {
             pushBytes(nextByte);
-
         }
         else {
             return popMessage();
@@ -56,16 +45,34 @@ public class bgsEncoderDecoder implements MessageEncoderDecoder<bgsMessage> {
     private bgsMessage popMessage() {
         short op = ByteBuffer.wrap(opcode).getShort();
         bgsMessage msg = null;
-        try {
-            msg = types_arr[0].getConstructor().newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+        switch (op) {
+            case 1:
+                msg = new RegisterMessage();
+                break;
+            case 2:
+                msg = new LoginMessage();
+                break;
+            case 3:
+                msg = new LogoutMessage();
+                break;
+            case 4:
+                msg = new FollowMessage();
+                break;
+            case 5:
+                msg = new PostMessage();
+                break;
+            case 6:
+                msg = new PMMessage();
+                break;
+            case 7:
+                msg = new LogStatMessage();
+                break;
+            case 8:
+                msg = new StatMessage();
+                break;
+            case 12:
+                msg = new BlockMessage();
+                break;
         }
         msg.fromBytes(bytes, len);
         len = 0;

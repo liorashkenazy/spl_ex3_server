@@ -23,7 +23,7 @@ public class ErrorMessage extends bgsMessage {
 
     @Override
     public byte[] toBytes() {
-        byte[] ret = new byte[4];
+        byte[] ret = new byte[5];
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);
         ret_buf.putShort(messageOpcode);

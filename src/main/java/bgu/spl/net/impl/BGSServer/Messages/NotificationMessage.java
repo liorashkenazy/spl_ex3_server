@@ -27,7 +27,7 @@ public class NotificationMessage extends bgsMessage {
 
     @Override
     public byte[] toBytes() {
-        byte[] ret = new byte[postingUser.length() + content.length() + 5];
+        byte[] ret = new byte[postingUser.length() + content.length() + 6];
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);
         ret_buf.put(type);

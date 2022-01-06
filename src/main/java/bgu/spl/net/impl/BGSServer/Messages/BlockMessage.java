@@ -9,7 +9,7 @@ public class BlockMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 0;
+        return opcode;
     }
 
     public String getUsername() { return username; }

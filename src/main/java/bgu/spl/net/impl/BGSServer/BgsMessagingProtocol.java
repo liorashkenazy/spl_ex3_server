@@ -82,7 +82,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
 
     private void handleLogin(LoginMessage msg) {
         User user = social.getUserByName(msg.getUsername());
-        if (curr_user != null || user == null || !user.logIn(msg.getPassword(), id)) {
+        if (curr_user != null || user == null || msg.getCaptcha() == 0 || !user.logIn(msg.getPassword(), id)) {
             connections.send(id, new ErrorMessage(msg.getOp()));
             return;
         }
@@ -133,7 +133,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             }
         }
         // The follow command succeeded
-        connections.send(id, new AckMessage(msg.getOp(), msg.getUsername().getBytes(StandardCharsets.UTF_8)));
+        connections.send(id, new AckMessage(msg.getOp(), (msg.getUsername() + '\0').getBytes(StandardCharsets.UTF_8)));
     }
 
     private void handlePost(PostMessage msg) {
@@ -196,12 +196,12 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         }
         else {
             int count = 0;
-            String[] usernames_list = msg.getListOfUsernames().split("|");
+            String[] usernames_list = msg.getListOfUsernames().split("\\|");
             byte[] info = new byte[usernames_list.length*8];
             ByteBuffer info_buf = ByteBuffer.wrap(info);
             for (String username : usernames_list) {
                 User user = social.getUserByName(username);
-                if (user == null || user.isBlocking(curr_user) && curr_user.isBlocking(user)) {
+                if (user == null || user.isBlocking(curr_user) || curr_user.isBlocking(user)) {
                     connections.send(id, new ErrorMessage(msg.getOp()));
                     return;
                 }
@@ -235,6 +235,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         info_buf.putShort(user.getAge());
         info_buf.putShort(user.getNumPosts());
         info_buf.putShort(user.getNumFollowers());
+        info_buf.putShort(user.getNumFollowing());
     }
 
     private void copyByteArray(byte[] old_arr, byte[] new_arr) {

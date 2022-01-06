@@ -32,14 +32,14 @@ public class bguSocial {
     }
 
     public String filterMessage(String message) {
-        String filtered_message = message;
+        String filtered_message = message + " ";
         for (String to_filter : filtered_words) {
             filtered_message = filtered_message.replaceAll(String.format("(%s)([. ,?!:]+)", to_filter), "<filtered>$2");
         }
         return filtered_message;
     }
 
-    public void addPostPM (bgsMessage msg) {
+    public void addPostPM(bgsMessage msg) {
         post_pm_list.add(msg);
     }
 }
