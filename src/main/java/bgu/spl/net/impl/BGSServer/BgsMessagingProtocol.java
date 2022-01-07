@@ -255,10 +255,10 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
 
     private LinkedList<User> getTaggedUsers(String content) {
         LinkedList<User> tagged_users = new LinkedList<>();
-        Pattern pattern = Pattern.compile("(@[^|; ]+)", Pattern.MULTILINE);
+        Pattern pattern = Pattern.compile("@([^|; ,.\"?!']+)", Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(content);
         while (matcher.find()) {
-            String username = matcher.group();
+            String username = matcher.group(1);
             User user = social.getUserByName(username);
             if (user != null && !user.isBlocking(curr_user) && !curr_user.isBlocking(user)) {
                 tagged_users.add(user);
