@@ -8,6 +8,7 @@ import bgu.spl.net.impl.BGSServer.Social.bguSocial;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -182,8 +183,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
                     count++;
                 }
             }
-            byte[] ack_optional = new byte[count*8];
-            copyByteArray(info, ack_optional);
+            byte[] ack_optional = Arrays.copyOfRange(info, 0, count*8);
             connections.send(id, new AckMessage(msg.getOp(), ack_optional));
         }
     }
@@ -208,8 +208,7 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
                     count++;
                 }
             }
-            byte[] ack_optional = new byte[count*8];
-            copyByteArray(info, ack_optional);
+            byte[] ack_optional = Arrays.copyOfRange(info, 0, count*8);
             connections.send(id, new AckMessage(msg.getOp(), ack_optional));
         }
     }
@@ -234,12 +233,6 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
         info_buf.putShort(user.getNumPosts());
         info_buf.putShort(user.getNumFollowers());
         info_buf.putShort(user.getNumFollowing());
-    }
-
-    private void copyByteArray(byte[] old_arr, byte[] new_arr) {
-        for (int i=0; i<new_arr.length; i++) {
-            new_arr[i] = old_arr[i];
-        }
     }
 
     private void sendMessageToUser(User user, NotificationMessage notification) {

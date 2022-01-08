@@ -24,7 +24,7 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
     private final SocketChannel chan;
     private final Reactor reactor;
-    private AtomicBoolean is_protocol_started;
+    private boolean is_protocol_started;
 
     public NonBlockingConnectionHandler(
             MessageEncoderDecoder<T> reader,
@@ -34,14 +34,15 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
-        is_protocol_started = new AtomicBoolean(false);
+        is_protocol_started = false;
         this.reactor = reactor;
     }
 
     public Runnable continueRead() {
-        if (is_protocol_started.compareAndSet(false, true)) {
+        if (!is_protocol_started) {
             Connectionsimpl conn = Connectionsimpl.getInstance();
             this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
+            is_protocol_started = true;
         }
         ByteBuffer buf = leaseBuffer();
 
