@@ -102,7 +102,9 @@ public class User {
             followers.remove(to_block);
             to_block.following_count.decrementAndGet();
         }
-        to_block.removeFollower(to_block);
+        if (to_block.removeFollower(this)) {
+            following_count.decrementAndGet();
+        }
     }
 
     public boolean isBlocking(User other) {
@@ -119,8 +121,7 @@ public class User {
 
     public short getAge() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        short age = (short)Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
-        return age;
+        return (short)Period.between(LocalDate.parse(birthday, formatter), LocalDate.now()).getYears();
     }
 
     public short getNumPosts() {

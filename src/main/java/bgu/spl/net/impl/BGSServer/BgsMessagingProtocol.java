@@ -171,7 +171,6 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleLogStat(LogStatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
-            return;
         }
         else {
             int count = 0;
@@ -192,7 +191,6 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
     private void handleStat(StatMessage msg) {
         if (curr_user == null) {
             connections.send(id, new ErrorMessage(msg.getOp()));
-            return;
         }
         else {
             int count = 0;
@@ -222,8 +220,8 @@ public class BgsMessagingProtocol implements BidiMessagingProtocol<bgsMessage> {
             return;
         }
         User user_to_block = social.getUserByName(msg.getUsername());
-        // if user to block doesn't exist an Error message will be sent back
-        if (user_to_block == null) {
+        // if user to block doesn't exist or already blocked an Error message will be sent back
+        if (user_to_block == null || curr_user.isBlocking(user_to_block)) {
             connections.send(id, new ErrorMessage(msg.getOp()));
             return;
         }
