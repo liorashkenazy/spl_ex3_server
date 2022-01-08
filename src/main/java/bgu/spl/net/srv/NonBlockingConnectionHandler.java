@@ -13,6 +13,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
 
@@ -23,6 +24,7 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
     private final SocketChannel chan;
     private final Reactor reactor;
+    private AtomicBoolean is_protocol_started;
 
     public NonBlockingConnectionHandler(
             MessageEncoderDecoder<T> reader,
@@ -32,12 +34,15 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
-        Connectionsimpl conn = Connectionsimpl.getInstance();
-        this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
+        is_protocol_started = new AtomicBoolean(false);
         this.reactor = reactor;
     }
 
     public Runnable continueRead() {
+        if (is_protocol_started.compareAndSet(false, true)) {
+            Connectionsimpl conn = Connectionsimpl.getInstance();
+            this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
+        }
         ByteBuffer buf = leaseBuffer();
 
         boolean success = false;
