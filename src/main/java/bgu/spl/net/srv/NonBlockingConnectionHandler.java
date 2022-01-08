@@ -1,11 +1,7 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.impl.BGSServer.Connectionsimpl;
-import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,7 +9,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
 
@@ -24,7 +19,6 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
     private final SocketChannel chan;
     private final Reactor reactor;
-    private boolean is_protocol_started;
 
     public NonBlockingConnectionHandler(
             MessageEncoderDecoder<T> reader,
@@ -34,16 +28,10 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
-        is_protocol_started = false;
         this.reactor = reactor;
     }
 
     public Runnable continueRead() {
-        if (!is_protocol_started) {
-            Connectionsimpl conn = Connectionsimpl.getInstance();
-            this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
-            is_protocol_started = true;
-        }
         ByteBuffer buf = leaseBuffer();
 
         boolean success = false;

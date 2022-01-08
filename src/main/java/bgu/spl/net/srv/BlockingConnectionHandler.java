@@ -2,9 +2,6 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.impl.BGSServer.Connectionsimpl;
-import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -28,8 +25,6 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     @Override
     public void run() {
-        Connectionsimpl conn = Connectionsimpl.getInstance();
-        this.protocol.start(conn.connect((ConnectionHandler<bgsMessage>)this), (Connections<T>) conn);
         try (Socket sock = this.sock) { //just for automatic closing
             int read;
 
