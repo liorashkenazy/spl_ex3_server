@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 
@@ -10,13 +10,21 @@ public class FollowMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 0;
+        return op;
+    }
+
+    public byte getFollowAction() {
+        return follow;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     @Override
     public void fromBytes(byte[] msg, int length) {
         follow = msg[0];
-        username = new String(msg, 1, length - 1, StandardCharsets.UTF_8);
+        username = new String(msg, 1,  getNextNullTerminator(msg, 1)- 1, StandardCharsets.UTF_8);
     }
 
     @Override

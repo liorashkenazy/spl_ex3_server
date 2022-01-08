@@ -1,15 +1,23 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer;
 
+import bgu.spl.net.api.bidi.Connections;
+import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 import bgu.spl.net.srv.ConnectionHandler;
-import bgu.spl.net.srv.Connections;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Connectionsimpl implements Connections<bgsMessage> {
-    ConcurrentHashMap<Integer, ConnectionHandler<bgsMessage>> id_to_ch;
+    private ConcurrentHashMap<Integer, ConnectionHandler<bgsMessage>> id_to_ch;
+    private AtomicInteger curr_id = new AtomicInteger(0);
 
-    public Connectionsimpl(){
+    private Connectionsimpl(){
         id_to_ch = new ConcurrentHashMap<>();
+    }
+
+    public int connect(ConnectionHandler<bgsMessage> ch) {
+        id_to_ch.put(curr_id.get(), ch);
+        return curr_id.getAndIncrement();
     }
 
     @Override
@@ -32,5 +40,13 @@ public class Connectionsimpl implements Connections<bgsMessage> {
     @Override
     public void disconnect(int connectionId) {
         id_to_ch.remove(connectionId);
+    }
+
+    private static class SingletonHolder {
+        private static Connectionsimpl instance = new Connectionsimpl();
+    }
+
+    public static Connectionsimpl getInstance() {
+        return SingletonHolder.instance;
     }
 }

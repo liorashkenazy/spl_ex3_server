@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 
@@ -9,7 +9,7 @@ public class PostMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 0;
+        return opcode;
     }
 
     @Override
@@ -20,5 +20,9 @@ public class PostMessage extends bgsMessage {
     @Override
     public byte[] toBytes() {
         return new byte[0];
+    }
+
+    public String getContent() {
+        return content;
     }
 }

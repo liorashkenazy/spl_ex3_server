@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 public class LogStatMessage extends bgsMessage {
 

@@ -1,6 +1,7 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer;
 
 import bgu.spl.net.api.MessagingProtocol;
+import bgu.spl.net.impl.BGSServer.Messages.bgsMessage;
 
 public class bgsProtocol implements MessagingProtocol<bgsMessage> {
 

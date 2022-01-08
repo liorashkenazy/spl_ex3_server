@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 
@@ -12,7 +12,7 @@ public class StatMessage extends bgsMessage {
         return opcode;
     }
 
-    public String getListOfUsernames() { return listOfUsernames; };
+    public String getListOfUsernames() { return listOfUsernames; }
 
     @Override
     public void fromBytes(byte[] msg, int length) {

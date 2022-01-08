@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +27,7 @@ public class NotificationMessage extends bgsMessage {
 
     @Override
     public byte[] toBytes() {
-        byte[] ret = new byte[postingUser.length() + content.length() + 5];
+        byte[] ret = new byte[postingUser.length() + content.length() + 6];
         ByteBuffer ret_buf = ByteBuffer.wrap(ret);
         ret_buf.putShort(opcode);
         ret_buf.put(type);
@@ -35,6 +35,7 @@ public class NotificationMessage extends bgsMessage {
         ret_buf.put((byte) 0);
         ret_buf.put(content.getBytes(StandardCharsets.UTF_8));
         ret_buf.put((byte) 0);
+        ret_buf.put((byte)';');
         return ret;
     }
 }

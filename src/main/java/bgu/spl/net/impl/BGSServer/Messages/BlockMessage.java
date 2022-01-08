@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.bgs;
+package bgu.spl.net.impl.BGSServer.Messages;
 
 import java.nio.charset.StandardCharsets;
 
@@ -9,10 +9,10 @@ public class BlockMessage extends bgsMessage {
 
     @Override
     public short getOp() {
-        return 0;
+        return opcode;
     }
 
-    public String getUsername() { return username; };
+    public String getUsername() { return username; }
 
     @Override
     public void fromBytes(byte[] msg, int length) {
